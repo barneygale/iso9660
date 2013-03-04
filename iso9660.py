@@ -211,7 +211,7 @@ class ISO9660(object):
         d['volume_sequence']      = self._unpack_both('h')
 
         l2 = self._unpack('B')
-        d['name'] = self._unpack_string(l2)
+        d['name'] = self._unpack_string(l2).split(';')[0]
         if l2 % 2 == 0:
             self._unpack('B')
 
