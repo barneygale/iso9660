@@ -23,7 +23,8 @@ class ISO9660(object):
         self._paths = []   #path table
 
         self._url   = url
-        self._get_sector = self._get_sector_url if url.startswith('http') else self._get_sector_file
+        if self._get_sector is None: #it might have been set by a subclass
+            self._get_sector = self._get_sector_url if url.startswith('http') else self._get_sector_file
 
         ### Volume Descriptors
         sector = 0x10
