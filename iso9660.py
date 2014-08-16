@@ -232,8 +232,10 @@ class ISO9660(object):
             read += data
 
             if data == 1: #end of directory listing
-                break
-            if e['name'] not in '\x00\x01':
+                to_read = 2048 - (read % 2048)
+                self._unpack_raw(to_read)
+                read += to_read
+            elif e['name'] not in '\x00\x01':
                 yield e
 
     #Search for one child amongst the children
