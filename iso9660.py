@@ -6,6 +6,8 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+SECTOR_SIZE = 2048
+
 class ISO9660IOError(IOError):
     def __init__(self, path):
         self.path = path
@@ -21,12 +23,13 @@ class ISO9660(object):
         self._paths = []   #path table
 
         self._url   = url
-        self._get_sector = self._get_sector_url if url.startswith('http') else self._get_sector_file
+        if self._get_sector is None: #it might have been set by a subclass
+            self._get_sector = self._get_sector_url if url.startswith('http') else self._get_sector_file
 
         ### Volume Descriptors
         sector = 0x10
         while True:
-            self._get_sector(sector, 2048)
+            self._get_sector(sector, SECTOR_SIZE)
             sector += 1
             ty = self._unpack('B')
 
@@ -116,7 +119,7 @@ class ISO9660(object):
     ##
 
     def _get_sector_url(self, sector, length):
-        start = sector * 2048
+        start = sector * SECTOR_SIZE
         if self._buff:
             self._buff.close()
         opener = urllib.FancyURLopener()
@@ -126,7 +129,7 @@ class ISO9660(object):
 
     def _get_sector_file(self, sector, length):
         with open(self._url, 'rb') as f:
-            f.seek(sector*2048)
+            f.seek(sector*SECTOR_SIZE)
             self._buff = StringIO(f.read(length))
 
     ##
@@ -141,7 +144,7 @@ class ISO9660(object):
                 search.pop()
                 f = self._paths[f['parent']-1]
                 if f['parent'] == 1:
-                    e['ex_len'] = 2048 #TODO
+                    e['ex_len'] = SECTOR_SIZE #TODO
                     return e
 
         raise ISO9660IOError(path)
