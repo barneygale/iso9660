@@ -1,5 +1,6 @@
 import urllib
 import struct
+import datetime
 
 try:
     from cStringIO import StringIO
@@ -291,7 +292,17 @@ class ISO9660(object):
         return self._unpack_raw(17) #TODO
 
     def _unpack_dir_datetime(self):
-        return self._unpack_raw(7) #TODO
+        epoch = datetime.datetime(1970, 1, 1)
+        date = self._unpack_raw(7)
+        t = [struct.unpack('<B', i)[0] for i in date[:-1]]
+        t.append(struct.unpack('<b', date[-1])[0])
+        t[0] += 1900
+        t_offset = t.pop(-1) * 15 * 60.    # Offset from GMT in 15min intervals, converted to secs
+        t_timestamp = (datetime.datetime(*t) - epoch).total_seconds() - t_offset
+        t_datetime = datetime.datetime.fromtimestamp(t_timestamp)
+        t_readable = t_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        return t_readable
+
 
 
 if __name__ == '__main__':
