@@ -1,5 +1,6 @@
 import urllib
 import struct
+import datetime
 
 try:
     from cStringIO import StringIO
@@ -23,7 +24,7 @@ class ISO9660(object):
         self._paths = []   #path table
 
         self._url   = url
-        if self._get_sector is None: #it might have been set by a subclass
+        if not hasattr(self, '_get_sector'): #it might have been set by a subclass
             self._get_sector = self._get_sector_url if url.startswith('http') else self._get_sector_file
 
         ### Volume Descriptors
@@ -291,7 +292,17 @@ class ISO9660(object):
         return self._unpack_raw(17) #TODO
 
     def _unpack_dir_datetime(self):
-        return self._unpack_raw(7) #TODO
+        epoch = datetime.datetime(1970, 1, 1)
+        date = self._unpack_raw(7)
+        t = [struct.unpack('<B', i)[0] for i in date[:-1]]
+        t.append(struct.unpack('<b', date[-1])[0])
+        t[0] += 1900
+        t_offset = t.pop(-1) * 15 * 60.    # Offset from GMT in 15min intervals, converted to secs
+        t_timestamp = (datetime.datetime(*t) - epoch).total_seconds() - t_offset
+        t_datetime = datetime.datetime.fromtimestamp(t_timestamp)
+        t_readable = t_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        return t_readable
+
 
 
 if __name__ == '__main__':
